@@ -460,6 +460,12 @@ class ACGrid(ACLayout):
         widget.pos = (int(x * self._cell_width), int(y * self._cell_height))
         widget.size = (int(w * self._cell_width), int(h * self._cell_height))
 
+    # def updateSize(self):
+    #     for y, row in enumerate(self._children):
+    #         for x, cell in enumerate(row):
+    #             self._children[y][x].pos = (int(x * self._cell_width), int(y * self._cell_height))
+    #             self._children[y][x].size = (int(w * self._cell_width), int(h * self._cell_height))
+
     def update(self):
         for row in self._children:
             for cell in row:

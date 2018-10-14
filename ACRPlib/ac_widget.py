@@ -103,33 +103,55 @@ AC_TYRE_STATUS = {
 }
 
 
-class ACTyreWidget(ACWidget):
-    def __init__(self, tyre, app, parent=None):
-        super().__init__(parent)
+class ACTyreWidget(ACGrid):
+    def __init__(self, tyre, app, mirrored=False, parent=None):
+        super().__init__(parent, 3, 4)
 
         self.tyre = tyre
-        self.widget = ACGrid(app, 3, 4)
+        self.app = app
+        self.mirrored = mirrored
 
-        self.t_o = ACLabel("", app)
-        self.t_m = ACLabel("", app)
-        self.t_c = ACLabel("", app)
-        self.t_i = ACLabel("", app)
-        self.t = ACLabel("", app)
-        self.w = ACLabel("", app)
-        self.p = ACLabel("", app)
+    #     self.t_o = None
+    #     self.t_m = None
+    #     self.t_c = None
+    #     self.t_i = None
+    #     self.t = None
+    #     self.w = None
+    #     self.p = None
+    #
+    # def init(self):
+
+        self.t_o = ACLabel("", self.app)
+        self.t_m = ACLabel("", self.app)
+        self.t_c = ACLabel("", self.app)
+        self.t_i = ACLabel("", self.app)
+        self.t = ACLabel("", self.app)
+        self.w = ACLabel("", self.app)
+        self.p = ACLabel("", self.app)
+
+        CONSOLE(str(self.p.size[0]) + " " + str(self.size[1]))
 
         self.t_o.background_color = GREEN
         self.t_m.background_color = GREEN
         self.t_c.background_color = GREEN
         self.t_i.background_color = GREEN
 
-        self.widget.addWidget(self.t_o, 0, 0)
-        self.widget.addWidget(self.t_m, 1, 0)
-        self.widget.addWidget(self.t_c, 1, 1)
-        self.widget.addWidget(self.t_i, 2, 0)
-        self.widget.addWidget(self.t, 0, 3)
-        self.widget.addWidget(self.w, 1, 3)
-        self.widget.addWidget(self.p, 2, 3)
+        if not self.mirrored:
+            self.addWidget(self.t_o, 0, 0, 1, 3)
+        else:
+            self.addWidget(self.t_o, 2, 0, 1, 3)
+
+        self.addWidget(self.t_m, 1, 0)
+        self.addWidget(self.t_c, 1, 1)
+
+        if not self.mirrored:
+            self.addWidget(self.t_i, 2, 0, 1, 3)
+        else:
+            self.addWidget(self.t_i, 0, 0, 1, 3)
+
+        self.addWidget(self.t, 0, 3)
+        self.addWidget(self.w, 1, 3)
+        self.addWidget(self.p, 2, 3)
 
     def update(self):
         super().update()
@@ -137,6 +159,18 @@ class ACTyreWidget(ACWidget):
         self.t.text = ACCAR.getTyreTempFormated(self.tyre)
         self.w.text = ACCAR.getTyreWearFormated(self.tyre)
         self.p.text = ACCAR.getTyrePressureFormated(self.tyre)
+
+        dirt = ACCAR.getTyreDirtyLevel(self.tyre)
+
+        if dirt > 0:
+            self._border = True
+            self._border_color = Color(0.7, 0.3, 0.1, 1)
+            self._background = True
+            self._background_color = Color(0.7, 0.3, 0.1, dirt * 0.1)
+
+        else:
+            self._border = False
+            self._background = False
 
     def render(self):
         super().render()

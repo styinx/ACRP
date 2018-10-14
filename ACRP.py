@@ -42,7 +42,7 @@ def acMain(ac_version):
     panel_main = ACApp("ACRP", 0, 0, 300, 100).hideDecoration()
     panel_standing = ACApp("ACRP Standings", 0, 0, 300, 100).hideDecoration()
     panel_time = ACApp("ACRP Times", 0, 0, 300, 200).hideDecoration()
-    panel_car = ACApp("ACRP Car", 0, 0, 50, 80).hideDecoration()
+    panel_car = ACApp("ACRP Car", 0, 0, 200, 300).hideDecoration()
     panel_player = ACApp("ACRP Player", 0, 0, 300, 100).hideDecoration()
     main_widget = ACMainWidget(panel_main)
 
@@ -177,6 +177,7 @@ def guiStanding():
 def guiTimes():
     global panel_time
     global time_grid, delta_widget, delta_label, current_sectors, current, last_sectors, last, best
+    global current_sector_num, current_sector_value, current_sector_text, current_sector
 
     time_grid = ACGrid(panel_time, 6, 8)
     delta_widget = ACLapDeltaWidget(panel_time)
@@ -186,11 +187,15 @@ def guiTimes():
     last_sectors = ACLabel("", panel_time)
     last = ACLabel("", panel_time)
     best = ACLabel("", panel_time)
+    current_sector = ACLabel("", panel_time)
+    current_sector_num = 0
+    current_sector_value = 0
+    current_sector_text = ""
 
     delta_label.font_bold = 1
     delta_label.font_size = 16
 
-    current_sectors.font_size = 12
+    current_sector.font_size = 12
     current.font_size = 16
 
     last_sectors.font_size = 12
@@ -200,7 +205,7 @@ def guiTimes():
 
     time_grid.addWidget(delta_widget, 0, 0, 6, 1)
     time_grid.addWidget(delta_label, 0, 2, 6, 1)
-    time_grid.addWidget(current_sectors, 0, 3, 6, 1)
+    time_grid.addWidget(current_sector, 0, 3, 6, 1)
     time_grid.addWidget(current, 0, 4, 6, 1)
     time_grid.addWidget(last_sectors, 0, 5, 6, 1)
     time_grid.addWidget(last, 0, 6, 6, 1)
@@ -209,13 +214,24 @@ def guiTimes():
 
 def guiCar():
     global car_grid, panel_car
-    global tyre_FL
+    global tyre_FL, tyre_FR, tyre_RL, tyre_RR
 
-    car_grid = ACGrid(panel_car, 2, 2)
+    car_grid = ACGrid(panel_car, 5, 5)
 
     tyre_FL = ACTyreWidget(0, panel_car)
+    tyre_FR = ACTyreWidget(1, panel_car, True)
+    tyre_RL = ACTyreWidget(2, panel_car)
+    tyre_RR = ACTyreWidget(3, panel_car, True)
 
-    car_grid.addWidget(tyre_FL, 0, 0)
+    car_grid.addWidget(tyre_FL, 0, 0, 2, 2)
+    car_grid.addWidget(tyre_FR, 0, 3, 2, 2)
+    car_grid.addWidget(tyre_RL, 3, 0, 2, 2)
+    car_grid.addWidget(tyre_RR, 3, 3, 2, 2)
+
+    # tyre_FL.init()
+    # tyre_FR.init()
+    # tyre_RL.init()
+    # tyre_RR.init()
 
 
 def guiPlayer():
@@ -267,18 +283,26 @@ def updateStanding(delta=0):
 
 def updateTimes(delta=0):
     global time_grid, delta_widget, delta_label, current_sectors, current, last_sectors, last, best
+    global current_sector_num, current_sector_value, current_sector_text, current_sector
 
     delta_widget.update()
 
     delta_label.text = ACLAP.getLapDelta()
     delta_label.text_color = delta_widget.delta_color
 
-    current_sector_text = ""
-    current_sector_values = ACLAP.getSplits()
-    for i in range(0, len(current_sector_values)):
-        current_sector_text += formatTime(current_sector_values[i]) + " | "
-    current_sectors.text = current_sector_text[:-3]
-    
+    split = ACLAP.getSplit()
+    if current_sector_value != split and split != '':
+        CONSOLE("change " + str(split))
+        current_sector_value = split
+        current_sector_text += current_sector_value + " | "
+        current_sector_num += 1
+
+        if current_sector_num == ACLAP.getSectors() + 1:
+            CONSOLE("reset " + str(split))
+            current_sector_num = 0
+            current_sector_text = ""
+        current_sector.text = current_sector_text
+
     current.text = "CUR:" + ACLAP.getCurrentLap()
     if ACLAP.getLapDeltaTime() < 0:
         current.text_color = GOOD
@@ -332,10 +356,11 @@ def updatePlayer(delta=0):
 
 def renderMain(delta=0):
     global panel_main
-    global main_grid
+    global main_grid, rpm_widget
 
     panel_main.render()
     main_grid.render()
+    rpm_widget.render()
 
 
 def renderStanding(delta=0):
