@@ -3,7 +3,7 @@ import acsys
 import sys
 import os
 import platform
-from math import sin, cos
+from math import sin, cos, isinf
 
 if platform.architecture()[0] == "64bit":
     sysdir = os.path.dirname(__file__) + '/../stdlib64'
@@ -24,6 +24,13 @@ def formatTime(millis):
     ms = millis % 1000
 
     return "{:02d}:{:02d}.{:03d}".format(m, s, ms)
+
+
+def formatDistance(meters):
+    km = int(meters / 1000)
+    m = (meters % 1000) / 10
+
+    return "{:2d}.{:02.0f} km".format(km, m)
 
 
 def formatGear(gear):
@@ -273,8 +280,30 @@ class ACSESSION:
         return info.graphics.session
 
     @staticmethod
+    def getSessionTypeName():
+        session = ACSESSION.getSessionType()
+
+        if session == 0:
+            return "Training"
+        elif session == 1:
+            return "Qualifying"
+        else:
+            return "Race"
+
+    @staticmethod
     def getSessionStatus():
         return info.graphics.status
+
+    @staticmethod
+    def getSessionStatusName():
+        session = ACSESSION.getSessionStatus()
+
+        if session == 0:
+            return "0"
+        elif session == 1:
+            return "1"
+        else:
+            return "2"
 
     @staticmethod
     def isTimedRace():
@@ -285,12 +314,37 @@ class ACSESSION:
         return info.graphics.sessionTimeLeft
 
     @staticmethod
+    def getRaceTimeLeftFormated():
+        time = ACSESSION.getRaceTimeLeft()
+
+        if not isinf(time):
+            if ACSESSION.isTimedRace():
+                return "time left: " + formatTime(time)
+            elif time > 0:
+                return "next session in: " + formatTime(time)
+            else:
+                return ""
+        return ""
+
+    @staticmethod
     def getTrackLength():
         return ac.getTrackLength(0)
 
     @staticmethod
+    def getTrackLengthFormated():
+        return formatDistance(ACSESSION.getTrackLength())
+
+    @staticmethod
     def getTrackName():
         return ac.getTrackName(0)
+
+    @staticmethod
+    def getTrackConfiguration():
+        return ac.getTrackConfiguration(0)
+
+    @staticmethod
+    def getCarName():
+        return ac.getCarName(0)
 
     @staticmethod
     def getCarsCount():
@@ -570,6 +624,10 @@ class ACCAR:
         return (ACCAR.getTyreWearValue(tyre) - 94) * 16.6
 
     @staticmethod
+    def getTyreWearFormated(tyre=0):
+        return "{:2.1f}%".format((ACCAR.getTyreWearValue(tyre) - 94) * 16.6)
+
+    @staticmethod
     def getTyreDirtyLevel(tyre=0):
         return info.physics.tyreDirtyLevel[tyre]
 
@@ -598,12 +656,27 @@ class ACCAR:
         elif loc == "c":
             return info.physics.tyreCoreTemperature[tyre]
         elif loc == "all":
-            return info.physics.tyreCoreTemperature
+            return [info.physics.tyreTempI[tyre],
+                    info.physics.tyreTempM[tyre],
+                    info.physics.tyreTempO[tyre],
+                    info.physics.tyreCoreTemperature[tyre]]
+
+    @staticmethod
+    def getTyreTempFormated(tyre=0, loc="m"):
+        return "{:2.1f}°".format(ACCAR.getTyreTemp(tyre, loc))
 
     @staticmethod
     def getTyrePressure(tyre=0):
         return info.physics.wheelsPressure[tyre]
 
     @staticmethod
+    def getTyrePressureFormated(tyre=0):
+        return "{:2.1f}psi".format(ACCAR.getTyrePressure(tyre))
+
+    @staticmethod
     def getBrakeTemperature(tyre=0):
         return info.physics.brakeTemp[tyre]
+
+    @staticmethod
+    def getBrakeTemperatureFormated(tyre=0):
+        return "{:2.1f}°".format(ACCAR.getBrakeTemperature(tyre))

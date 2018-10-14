@@ -6,6 +6,12 @@ APP_Y = 0
 APP_W = 0
 APP_H = 0
 
+GLOBAL = {
+    "CARS": [{"Lap_Invalid", "current_sectors", "Lap"}],
+    "Fastest_Lap": 0,
+    "Fastest_Sectors": [0, 0, 0]
+}
+
 
 def init():
     ROBOTO_MONO = Font("Roboto", 0, 0)
@@ -28,42 +34,52 @@ def rectIntersect(pos1, size1, pos2, size2):
 
 
 def acMain(ac_version):
-    global panel_main, panel_standing, panel_time, panel_car, main_widget
+    global panel_main, panel_standing, panel_time, panel_car, panel_player, main_widget
     global APP, APP_X, APP_Y
 
     init()
 
     panel_main = ACApp("ACRP", 0, 0, 300, 100).hideDecoration()
     panel_standing = ACApp("ACRP Standings", 0, 0, 300, 100).hideDecoration()
-    panel_time = ACApp("ACRP Times", 0, 0, 300, 100).hideDecoration()
-    panel_car = ACApp("ACRP Car", 0, 0, 300, 100).hideDecoration()
+    panel_time = ACApp("ACRP Times", 0, 0, 300, 200).hideDecoration()
+    panel_car = ACApp("ACRP Car", 0, 0, 50, 80).hideDecoration()
+    panel_player = ACApp("ACRP Player", 0, 0, 300, 100).hideDecoration()
     main_widget = ACMainWidget(panel_main)
 
     panel_main.background_color = BLACK
     panel_main.background_opacity = 1
     panel_standing.background_color = BLACK
-    panel_standing.background_opacity = 0
+    panel_standing.background_opacity = 1
+    panel_time.background_color = BLACK
+    panel_time.background_opacity = 1
+    panel_car.background_color = BLACK
+    panel_car.background_opacity = 1
+    panel_player.background_color = BLACK
+    panel_player.background_opacity = 1
 
     guiMain()
     guiStanding()
     guiTimes()
     guiCar()
+    guiPlayer()
 
     panel_main.render_callback = renderMain
     panel_standing.render_callback = renderStanding
     panel_time.render_callback = renderTime
     panel_car.render_callback = renderCar
+    panel_player.render_callback = renderPlayer
 
     return "ACRP"
 
 
 def acUpdate(delta):
-    global panel_main, panel_standing, panel_time, panel_car, main_widget
+    global panel_main, panel_standing, panel_time, panel_car, panel_player, main_widget
 
     panel_main.update()
     panel_standing.update()
     panel_time.update()
     panel_car.update()
+    panel_player.update()
 
     if panel_standing.position_changed:
         main_widget.dettach(panel_standing)
@@ -76,20 +92,23 @@ def acUpdate(delta):
     updateStanding()
     updateTimes()
     updateCar()
+    updatePlayer()
 
 
 def acRender(delta):
-    global panel_main, panel_standing, panel_time, panel_car
+    global panel_main, panel_standing, panel_time, panel_car, panel_player
 
     panel_main.render()
     panel_standing.render()
     panel_time.render()
     panel_car.render()
+    panel_player.render()
 
     renderMain()
     renderStanding()
     renderTime()
     renderCar()
+    renderPlayer()
 
 
 '''
@@ -101,7 +120,7 @@ def guiMain():
     global panel_main
     global main_grid, gear, speed, rpm, rpm_widget
 
-    main_grid = ACGrid(panel_main, 3, 3)
+    main_grid = ACGrid(panel_main, 3, 4)
     gear = ACLabel("", panel_main)
     speed = ACLabel("", panel_main)
     rpm = ACLabel("", panel_main)
@@ -109,20 +128,18 @@ def guiMain():
 
     gear.font_bold = 1
     gear.font_size = 60
-    gear.text_h_alignment = "right"
 
     speed.font_size = 40
     speed.text_h_alignment = "right"
-    speed.text_v_alignment = "top"
 
-    rpm.font_size = 15
+    rpm.font_size = 20
     rpm.text_h_alignment = "right"
-    rpm.text_v_alignment = "bottom"
+    rpm.text_v_alignment = "top"
 
-    main_grid.addWidget(gear, 0, 0, 1, 2)
-    main_grid.addWidget(speed, 1, 0, 2, 1)
-    main_grid.addWidget(rpm, 1, 1, 2, 1)
-    main_grid.addWidget(rpm_widget, 0, 2, 3, 1)
+    main_grid.addWidget(gear, 0, 0, 1, 3)
+    main_grid.addWidget(speed, 1, 0, 2, 2)
+    main_grid.addWidget(rpm, 1, 2, 2, 1)
+    main_grid.addWidget(rpm_widget, 0, 3, 3, 1)
 
 
 def guiStanding():
@@ -159,22 +176,62 @@ def guiStanding():
 
 def guiTimes():
     global panel_time
-    global time_grid, delta_widget, delta_label, current, last, best
+    global time_grid, delta_widget, delta_label, current_sectors, current, last_sectors, last, best
 
-    time_grid = ACGrid(panel_time, 6, 4)
+    time_grid = ACGrid(panel_time, 6, 8)
     delta_widget = ACLapDeltaWidget(panel_time)
     delta_label = ACLabel("", panel_time)
+    current_sectors = ACLabel("", panel_time)
+    current = ACLabel("", panel_time)
+    last_sectors = ACLabel("", panel_time)
+    last = ACLabel("", panel_time)
+    best = ACLabel("", panel_time)
 
     delta_label.font_bold = 1
-    delta_label.text_color = WHITE
     delta_label.font_size = 16
+
+    current_sectors.font_size = 12
+    current.font_size = 16
+
+    last_sectors.font_size = 12
+    last.font_size = 16
+
+    best.font_size = 16
 
     time_grid.addWidget(delta_widget, 0, 0, 6, 1)
     time_grid.addWidget(delta_label, 0, 2, 6, 1)
+    time_grid.addWidget(current_sectors, 0, 3, 6, 1)
+    time_grid.addWidget(current, 0, 4, 6, 1)
+    time_grid.addWidget(last_sectors, 0, 5, 6, 1)
+    time_grid.addWidget(last, 0, 6, 6, 1)
+    time_grid.addWidget(best, 0, 7, 6, 1)
 
 
 def guiCar():
-    global panel_car
+    global car_grid, panel_car
+    global tyre_FL
+
+    car_grid = ACGrid(panel_car, 2, 2)
+
+    tyre_FL = ACTyreWidget(0, panel_car)
+
+    car_grid.addWidget(tyre_FL, 0, 0)
+
+
+def guiPlayer():
+    global panel_player
+    global player_grid, player_name, session_info, session_time, track_info
+
+    player_grid = ACGrid(panel_player, 4, 3)
+    player_name = ACLabel("", panel_player)
+    session_info = ACLabel("", panel_player)
+    session_time = ACLabel("", panel_player)
+    track_info = ACLabel("", panel_player)
+
+    player_grid.addWidget(player_name, 0, 0, 4, 1)
+    player_grid.addWidget(session_info, 0, 1, 2, 1)
+    player_grid.addWidget(session_time, 2, 1, 2, 1)
+    player_grid.addWidget(track_info, 0, 2, 2, 1)
 
 
 '''
@@ -183,12 +240,20 @@ def guiCar():
 
 
 def updateMain(delta=0):
-    global gear, speed, rpm, rpm_widget
+    global panel_main
+    global main_grid, gear, speed, rpm, rpm_widget
 
     gear.text = ACCAR.getGear()
-    speed.text = "{:3.0f} km/h".format(ACCAR.getSpeed())
+    speed.text = "{:3.0f} kmh".format(ACCAR.getSpeed())
     rpm.text = "{:5.0f} rpm".format(ACCAR.getRPM())
     rpm_widget.update()
+
+    if rpm_widget.rpm_rel >= 0.96:
+        main_grid.background_color = YELLOW
+    else:
+        main_grid.background_color = TRANSPARENT
+
+    main_grid.update()
 
 
 def updateStanding(delta=0):
@@ -201,15 +266,63 @@ def updateStanding(delta=0):
 
 
 def updateTimes(delta=0):
-    global time_grid, delta_widget, delta_label, current, last, best
+    global time_grid, delta_widget, delta_label, current_sectors, current, last_sectors, last, best
 
     delta_widget.update()
+
     delta_label.text = ACLAP.getLapDelta()
     delta_label.text_color = delta_widget.delta_color
 
+    current_sector_text = ""
+    current_sector_values = ACLAP.getSplits()
+    for i in range(0, len(current_sector_values)):
+        current_sector_text += formatTime(current_sector_values[i]) + " | "
+    current_sectors.text = current_sector_text[:-3]
+    
+    current.text = "CUR:" + ACLAP.getCurrentLap()
+    if ACLAP.getLapDeltaTime() < 0:
+        current.text_color = GOOD
+    if ACLAP.getLapDeltaTime() > 0:
+        current.text_color = BAD
+    else:
+        current.text_color = WHITE
+
+    last_sector_text = ""
+    last_sector_values = ACLAP.getSplits()
+    for i in range(0, len(last_sector_values)):
+        last_sector_text += formatTime(last_sector_values[i]) + " | "
+    last_sectors.text = last_sector_text[:-3]
+
+    last.text = "LST:" + ACLAP.getLastLap()
+    if ACLAP.getLastLapTime() == ACLAP.getBestLapTime() and ACLAP.getLastLapTime() != 0:
+        last.text_color = GOOD
+    else:
+        last.text_color = WHITE
+
+    best.text = "BST:" + ACLAP.getBestLap()
+    if ACLAP.getBestLapTime() != 0:
+        best.text_color = GOOD
+    else:
+        best.text_color = WHITE
+
 
 def updateCar(delta=0):
-    i = 0
+    global car_grid
+
+    car_grid.update()
+
+
+def updatePlayer(delta=0):
+    global player_grid, player_name, session_info, session_time, track_info
+
+    if ACCAR.isAIDriven():
+        player_name.text = ACPLAYER.getPlayerNickname() + " [" + ACSESSION.getCarName() + "] (AI)"
+    else:
+        player_name.text = ACPLAYER.getPlayerNickname() + " [" + ACSESSION.getCarName() + "]"
+
+    session_info.text = ACSESSION.getSessionTypeName() + " (" + ACSESSION.getSessionStatusName() + ")"
+    session_time.text = ACSESSION.getRaceTimeLeftFormated()
+    track_info.text = str(ACSESSION.getTrackName()) + "[" + str(ACSESSION.getTrackConfiguration()) + "] " + str(ACSESSION.getTrackLengthFormated())
 
 
 '''
@@ -219,10 +332,10 @@ def updateCar(delta=0):
 
 def renderMain(delta=0):
     global panel_main
-    global rpm_widget
+    global main_grid
 
     panel_main.render()
-    rpm_widget.render()
+    main_grid.render()
 
 
 def renderStanding(delta=0):
@@ -241,5 +354,13 @@ def renderTime(delta=0):
 
 def renderCar(delta=0):
     global panel_car
+    global car_grid
 
     panel_car.render()
+    car_grid.render()
+
+
+def renderPlayer(delta=0):
+    global panel_player
+
+    panel_player.render()

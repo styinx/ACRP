@@ -11,6 +11,7 @@ WHITE = Color(1, 1, 1, 1)
 LIME = Color(0.2, 0.7, 0.1, 1)
 YELLOW = Color(0.9, 0.9, 0, 1)
 ORANGE = Color(0.9, 0.7, 0, 1)
+PURPLE = Color(0.3, 0, 0.7, 1)
 
 GOOD = Color(0, 0.8, 0, 1)
 BAD = Color(0.9, 0, 0, 1)
@@ -38,7 +39,7 @@ class ACWidget(object):
         self._background = False
         self._background_color = Color(0, 0, 0, 0)
         self._background_opacity = 0
-        self._border = False
+        self._border = True
         self._border_color = Color(1, 1, 1, 1)
         self._render_callback = None
 
@@ -199,9 +200,18 @@ class ACWidget(object):
         if self._child is not None:
             self._child.update()
 
+        if self._background:
+            col = self._background_color
+            if self._ac_obj is not None:
+                ac.setBackgroundColor(self._ac_obj, col.r, col.g, col.b)
+                ac.setBackgroundOpacity(self._ac_obj, col.a)
+
     def render(self):
         if self._child is not None:
             self._child.render()
+
+        if self._border:
+            GL.rect(self._pos[0], self._pos[1], self._size[0], self._size[1], self._border_color, False)
 
 
 class ACMainWidget(ACWidget):
@@ -230,18 +240,18 @@ class ACMainWidget(ACWidget):
             if ax - x <= ay - y or ax + aw - x <= ay + ah - y:
                 # left
                 if x <= ax + aw / 2:
-                    app.pos = (ax - w - 1, ay - 1)
+                    app.pos = (ax - w - 1, ay)
                 # right
                 elif x > ax + aw / 2:
-                    app.pos = (ax + aw + 1, ay + 1)
+                    app.pos = (ax + aw + 1, ay)
             # vertical
             else:
                 # top
                 if y <= ay + ah / 2:
-                    app.pos = (ax - 1, ay - h - 1)
+                    app.pos = (ax, ay - h - 1)
                 # bottom
                 elif y > ay + ah / 2:
-                    app.pos = (ax + 1, ay + ah + 1)
+                    app.pos = (ax, ay + ah + 1)
 
         app.attached = True
 
@@ -252,6 +262,12 @@ class ACMainWidget(ACWidget):
             self._children[app] = None
 
         app.attached = False
+
+    def update(self):
+        pass
+
+    def render(self):
+        pass
 
 
 class ACApp(ACWidget):
@@ -345,18 +361,21 @@ class ACApp(ACWidget):
 
     def update(self):
         self.position_changed = False
-        self.background_color = self._background_color
-        self.background_opacity = self._background_opacity
-        self.background_texture = self._background_texture
+        col = self._background_color
 
-        x, y = ACWidget.getPosition(self._ac_obj)
+        if self._ac_obj is not None:
+            ac.setBackgroundColor(self._ac_obj, col.r, col.g, col.b)
+            ac.setBackgroundOpacity(self._ac_obj, col.a)
 
-        if self._pos[0] != x or self._pos[1] != y:
-            self.pos = (x, y)
-            self.position_changed = True
+            x, y = ACWidget.getPosition(self._ac_obj)
+
+            if self._pos[0] != x or self._pos[1] != y:
+                self._pos = (x, y)
+                self.position_changed = True
 
     def render(self):
-        i = 0
+        if self._border:
+            GL.rect(0, 0, self._size[0], self._size[1], self._border_color, False)
 
 
 class ACLayout(ACWidget):
@@ -379,10 +398,14 @@ class ACBox(ACLayout):
         self._children_count += 1
 
     def update(self):
+        super().update()
+        
         for child in self._children:
             child.update()
 
     def render(self):
+        super().render()
+
         for child in self._children:
             child.render()
 
@@ -432,7 +455,7 @@ class ACGrid(ACLayout):
         self._cell_height = self.size[1] / self._rows
 
     def addWidget(self, widget, x, y, w=1, h=1):
-        self._children[x][y] = widget
+        self._children[y][x] = widget
 
         widget.pos = (int(x * self._cell_width), int(y * self._cell_height))
         widget.size = (int(w * self._cell_width), int(h * self._cell_height))
@@ -440,12 +463,14 @@ class ACGrid(ACLayout):
     def update(self):
         for row in self._children:
             for cell in row:
-                cell.update()
+                if isinstance(cell, ACWidget):
+                    cell.update()
 
     def render(self):
         for row in self._children:
             for cell in row:
-                cell.render()
+                if isinstance(cell, ACWidget):
+                    cell.update()
 
 
 class ACTextWidget(ACWidget):

@@ -10,9 +10,13 @@ class ACLapDeltaWidget(ACWidget):
         self.delta_color = WHITE
 
     def update(self):
+        super().update()
+
         self.delta = ACLAP.getLapDeltaTime()
 
     def render(self):
+        super().render()
+
         x = self.pos[0]
         y = self.pos[1]
         w = self.size[0]
@@ -50,14 +54,18 @@ class ACRPMWidget(ACWidget):
         self.color = TRANSPARENT
 
     def update(self):
+        super().update()
+
         self.rpm_rel = ACCAR.getRPM() / ACCAR.getRPMMax()
 
     def render(self):
+        super().render()
+
         start = self.pos[0]
         stop = int((self.pos[0] + self.size[0]) * self.rpm_rel)
         bar_w = 2
         bar_d = 4
-        offset = 0.3
+        offset = 0.2
         size = self.size[0]
 
         if self.orientation == 1:
@@ -78,7 +86,7 @@ class ACRPMWidget(ACWidget):
                 self.color = GREEN
 
             if self.orientation == 0:
-                GL.rect(pos, int(self.pos[1] * (1 + offset)), bar_w, int(self.size[1] * (1 - offset * 2)), self.color, True)
+                GL.rect(pos, int(self.pos[1] + (self.size[1] * offset)), bar_w, int(self.size[1] * (1 - offset * 2)), self.color, True)
             else:
                 GL.rect(self.pos[0], pos, self.size[1], bar_w, self.color, True)
 
@@ -99,17 +107,36 @@ class ACTyreWidget(ACWidget):
     def __init__(self, tyre, app, parent=None):
         super().__init__(parent)
 
-        self._tyre = tyre
-        self._wear = 0
-        self._temp = 0
-        self._pressure = 0
-        self._dirt = 0
+        self.tyre = tyre
+        self.widget = ACGrid(app, 3, 4)
+
+        self.t_o = ACLabel("", app)
+        self.t_m = ACLabel("", app)
+        self.t_c = ACLabel("", app)
+        self.t_i = ACLabel("", app)
+        self.t = ACLabel("", app)
+        self.w = ACLabel("", app)
+        self.p = ACLabel("", app)
+
+        self.t_o.background_color = GREEN
+        self.t_m.background_color = GREEN
+        self.t_c.background_color = GREEN
+        self.t_i.background_color = GREEN
+
+        self.widget.addWidget(self.t_o, 0, 0)
+        self.widget.addWidget(self.t_m, 1, 0)
+        self.widget.addWidget(self.t_c, 1, 1)
+        self.widget.addWidget(self.t_i, 2, 0)
+        self.widget.addWidget(self.t, 0, 3)
+        self.widget.addWidget(self.w, 1, 3)
+        self.widget.addWidget(self.p, 2, 3)
 
     def update(self):
-        self._wear = ACCAR.getTyreWear(self._tyre)
-        self._temp = ACCAR.getTyreTemp(self._tyre, "all")
-        self._pressure = ACCAR.getTyrePressure(self._tyre)
-        self._dirt = ACCAR.getTyreDirtyLevel(self._tyre)
+        super().update()
+
+        self.t.text = ACCAR.getTyreTempFormated(self.tyre)
+        self.w.text = ACCAR.getTyreWearFormated(self.tyre)
+        self.p.text = ACCAR.getTyrePressureFormated(self.tyre)
 
     def render(self):
-        i = 0
+        super().render()
