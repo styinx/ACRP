@@ -273,6 +273,14 @@ class ACPLAYER:
     def getPlayerLastname():
         return info.static.playerSurname
 
+    @staticmethod
+    def isIdealLineOn():
+        return info.graphics.idealLineOn
+
+    @staticmethod
+    def isAutoShifterOn():
+        return info.physics.autoShifterOn
+
 
 class ACSESSION:
     @staticmethod
@@ -287,8 +295,20 @@ class ACSESSION:
             return "Training"
         elif session == 1:
             return "Qualifying"
-        else:
+        elif session == 2:
             return "Race"
+        elif session == 3:
+            return "Hotlap"
+        elif session == 4:
+            return "Time Attack"
+        elif session == 5:
+            return "Drift"
+        else:
+            return "Drag"
+
+    @staticmethod
+    def getSessionCount():
+        return info.static.numberOfSessions
 
     @staticmethod
     def getSessionStatus():
@@ -299,11 +319,44 @@ class ACSESSION:
         session = ACSESSION.getSessionStatus()
 
         if session == 0:
-            return "0"
+            return "Off"
         elif session == 1:
-            return "1"
+            return "Replay"
+        elif session == 2:
+            return "Live"
         else:
-            return "2"
+            return "Pause"
+
+    @staticmethod
+    def getFlagType():
+        return info.graphics.flag
+
+    @staticmethod
+    def getFlagTypeName():
+        flag = ACSESSION.getFlagType()
+
+        if flag == 0:
+            return ""
+        elif flag == 1:
+            return "Blue"
+        elif flag == 2:
+            return "Yellow"
+        elif flag == 3:
+            return "Black"
+        elif flag == 4:
+            return "White"
+        elif flag == 5:
+            return "Checkered"
+        elif flag == 1:
+            return "Penalty"
+
+    @staticmethod
+    def pitWindowStart():
+        return info.static.pitWindowStart
+
+    @staticmethod
+    def pitWindowEnd():
+        return info.static.pitWindowEnd
 
     @staticmethod
     def isTimedRace():
@@ -322,8 +375,6 @@ class ACSESSION:
                 return "time left: " + formatTime(time)
             elif time > 0:
                 return "next session in: " + formatTime(time)
-            else:
-                return ""
         return ""
 
     @staticmethod
@@ -350,8 +401,36 @@ class ACSESSION:
     def getCarsCount():
         return ac.getCarsCount()
 
+    @staticmethod
+    def getWindDirection():
+        return info.graphics.windDirection
+
+    @staticmethod
+    def getWindSpeed():
+        return info.graphics.windSpeed
+
+    @staticmethod
+    def getSurfaceGrip():
+        return info.graphics.surfaceGrip
+
+    @staticmethod
+    def getRoadTemp():
+        return info.physics.roadTemp
+
+    @staticmethod
+    def getAirTemp():
+        return info.physics.airTemp
+
+    @staticmethod
+    def getAirDensity():
+        return info.physics.airDensity
+
 
 class ACLAP:
+    @staticmethod
+    def getLapCount():
+        return info.graphics.completedLaps
+
     @staticmethod
     def getCurrentLapTime(car=0):
         return ac.getCarState(car, acsys.CS.LapTime)
@@ -387,6 +466,18 @@ class ACLAP:
             return formatTime(time)
         else:
             return "00:00.000"
+
+    @staticmethod
+    def getSectorIndex():
+        return info.graphics.currentSectorIndex
+
+    @staticmethod
+    def getLastSector():
+        return info.graphics.lastSectorTime
+
+    @staticmethod
+    def getSectorCount():
+        return info.static.sectorCount
 
     @staticmethod
     def getSplit():
@@ -439,6 +530,10 @@ class ACCAR:
     @staticmethod
     def getFocusedCar():
         return ac.getFocusedCar()
+
+    @staticmethod
+    def getTraveledDistance():
+        return info.graphics.distanceTraveled
 
     @staticmethod
     def getCarDamage(loc=0):
@@ -586,6 +681,18 @@ class ACCAR:
     @staticmethod
     def getLocation(car=0):
         return ac.getCarState(car, acsys.CS.NormalizedSplinePosition)
+
+    @staticmethod
+    def getPenaltyTime():
+        return info.graphics.penaltyTime
+
+    @staticmethod
+    def isPitLimiterOn():
+        return info.physics.pitLimiterOn
+
+    @staticmethod
+    def mandatoryPitStopDone():
+        return info.graphics.mandatoryPitDone
 
     @staticmethod
     def isInPit(car=0):
