@@ -5,6 +5,7 @@ TRANSPARENT = Color(0, 0, 0, 0)
 BLACK = Color(0, 0, 0, 1)
 BLUE = Color(0, 0, 1, 1)
 GREEN = Color(0, 1, 0, 1)
+CYAN = Color(0, 1, 1, 1)
 RED = Color(1, 0, 0, 1)
 WHITE = Color(1, 1, 1, 1)
 
@@ -399,7 +400,7 @@ class ACBox(ACLayout):
 
     def update(self):
         super().update()
-        
+
         for child in self._children:
             child.update()
 
@@ -451,20 +452,26 @@ class ACGrid(ACLayout):
         self._children = [x[:] for x in [[0] * cols] * rows]
         self._cols = cols
         self._rows = rows
-        self._cell_width = self.size[0] / self._cols
-        self._cell_height = self.size[1] / self._rows
+        self._cell_width = int(self.size[0] / self._cols + 0.5)
+        self._cell_height = int(self.size[1] / self._rows + 0.5)
 
     def addWidget(self, widget, x, y, w=1, h=1):
         self._children[y][x] = widget
 
-        widget.pos = (int(x * self._cell_width), int(y * self._cell_height))
-        widget.size = (int(w * self._cell_width), int(h * self._cell_height))
+        if not isinstance(widget, ACApp):
+            widget.pos = (int(self.pos[0] + x * self._cell_width + 0.5), int(self.pos[1] + y * self._cell_height + 0.5))
+        else:
+            widget.pos = (int(x * self._cell_width + 0.5), int(y * self._cell_height + 0.5))
+        widget.size = (int(w * self._cell_width + 0.5), int(h * self._cell_height + 0.5))
 
-    # def updateSize(self):
-    #     for y, row in enumerate(self._children):
-    #         for x, cell in enumerate(row):
-    #             self._children[y][x].pos = (int(x * self._cell_width), int(y * self._cell_height))
-    #             self._children[y][x].size = (int(w * self._cell_width), int(h * self._cell_height))
+    def updateSize(self):
+        self._cell_width = int(self.size[0] / self._cols + 0.5)
+        self._cell_height = int(self.size[1] / self._rows + 0.5)
+
+        # for y, row in enumerate(self._children):
+        #     for x, cell in enumerate(row):
+        #         self._children[y][x].pos = (int(x * self._cell_width), int(y * self._cell_height))
+        #         self._children[y][x].size = (int(w * self._cell_width), int(h * self._cell_height))
 
     def update(self):
         for row in self._children:
@@ -617,3 +624,30 @@ class ACLabel(ACTextWidget):
         self._ac_obj = ac.addLabel(app.app(), text)
         self.text = text
         ACTextWidget.initOBJ(self)
+
+
+class ACProgressBar(ACWidget):
+    def __init__(self, orientation=0, value=0, min_val=0, max_val=100, parent=None):
+        super().__init__(parent)
+
+        self.orientation = orientation
+        self.margin = 0.2
+        self.value = value
+        self.min_val = min_val
+        self.max_val = max_val
+
+    def render(self):
+        if self.orientation == 0:
+            ratio = self.size[0] * (self.value / self.max_val)
+            margin = self.size[1] * self.margin
+            GL.rect(self.pos[0], self.pos[1] + margin, ratio, self.size[1] - 2 * margin, self.background_color)
+
+            if self._border:
+                GL.rect(self.pos[0], self.pos[1] + margin, ratio, self.size[1] - 2 * margin, self.border_color, False)
+        else:
+            ratio = self.size[1] * (self.value / self.max_val)
+            margin = self.size[0] * self.margin
+            GL.rect(self.pos[0] + margin, self.size[1] - ratio, self.size[0] - 2 * margin, ratio, self.background_color)
+
+            if self._border:
+                GL.rect(self.pos[0] + margin, self.size[1] - ratio, self.size[0] - 2 * margin, ratio, self.border_color, False)

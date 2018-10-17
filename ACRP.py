@@ -34,7 +34,7 @@ def rectIntersect(pos1, size1, pos2, size2):
 
 
 def acMain(ac_version):
-    global panel_main, panel_standing, panel_time, panel_car, panel_player, main_widget
+    global panel_main, panel_standing, panel_time, panel_tyres, panel_damage, panel_player, main_widget
     global APP, APP_X, APP_Y
 
     init()
@@ -42,7 +42,8 @@ def acMain(ac_version):
     panel_main = ACApp("ACRP", 0, 0, 300, 100).hideDecoration()
     panel_standing = ACApp("ACRP Standings", 0, 0, 300, 100).hideDecoration()
     panel_time = ACApp("ACRP Times", 0, 0, 300, 200).hideDecoration()
-    panel_car = ACApp("ACRP Car", 0, 0, 200, 300).hideDecoration()
+    panel_tyres = ACApp("ACRP Tyres", 0, 0, 200, 300).hideDecoration()
+    panel_damage = ACApp("ACRP Damage", 0, 0, 100, 200).hideDecoration()
     panel_player = ACApp("ACRP Player", 0, 0, 300, 100).hideDecoration()
     main_widget = ACMainWidget(panel_main)
 
@@ -52,33 +53,38 @@ def acMain(ac_version):
     panel_standing.background_opacity = 1
     panel_time.background_color = BLACK
     panel_time.background_opacity = 1
-    panel_car.background_color = BLACK
-    panel_car.background_opacity = 1
+    panel_tyres.background_color = BLACK
+    panel_tyres.background_opacity = 1
+    panel_damage.background_color = BLACK
+    panel_damage.background_opacity = 1
     panel_player.background_color = BLACK
     panel_player.background_opacity = 1
 
     guiMain()
     guiStanding()
     guiTimes()
-    guiCar()
+    guiTyres()
+    guiDamage()
     guiPlayer()
 
     panel_main.render_callback = renderMain
     panel_standing.render_callback = renderStanding
     panel_time.render_callback = renderTime
-    panel_car.render_callback = renderCar
+    panel_tyres.render_callback = renderTyres
+    panel_damage.render_callback = renderDamage
     panel_player.render_callback = renderPlayer
 
     return "ACRP"
 
 
 def acUpdate(delta):
-    global panel_main, panel_standing, panel_time, panel_car, panel_player, main_widget
+    global panel_main, panel_standing, panel_time, panel_tyres, panel_damage, panel_player, main_widget
 
     panel_main.update()
     panel_standing.update()
     panel_time.update()
-    panel_car.update()
+    panel_tyres.update()
+    panel_damage.update()
     panel_player.update()
 
     if panel_standing.position_changed:
@@ -91,23 +97,26 @@ def acUpdate(delta):
     updateMain()
     updateStanding()
     updateTimes()
-    updateCar()
+    updateTyres()
+    updateDamage()
     updatePlayer()
 
 
 def acRender(delta):
-    global panel_main, panel_standing, panel_time, panel_car, panel_player
+    global panel_main, panel_standing, panel_time, panel_tyres, panel_damage, panel_player
 
     panel_main.render()
     panel_standing.render()
     panel_time.render()
-    panel_car.render()
+    panel_tyres.render()
+    panel_damage.render()
     panel_player.render()
 
     renderMain()
     renderStanding()
     renderTime()
-    renderCar()
+    renderTyres()
+    renderDamage()
     renderPlayer()
 
 
@@ -188,7 +197,7 @@ def guiTimes():
     last = ACLabel("", panel_time)
     best = ACLabel("", panel_time)
     current_sector = ACLabel("", panel_time)
-    current_sector_num = 0
+    current_sector_num = -1
     current_sector_value = 0
     current_sector_text = ""
 
@@ -212,26 +221,36 @@ def guiTimes():
     time_grid.addWidget(best, 0, 7, 6, 1)
 
 
-def guiCar():
-    global car_grid, panel_car
+def guiTyres():
+    global tyre_grid, panel_tyres
     global tyre_FL, tyre_FR, tyre_RL, tyre_RR
 
-    car_grid = ACGrid(panel_car, 5, 5)
+    tyre_grid = ACGrid(panel_tyres, 5, 5)
 
-    tyre_FL = ACTyreWidget(0, panel_car)
-    tyre_FR = ACTyreWidget(1, panel_car, True)
-    tyre_RL = ACTyreWidget(2, panel_car)
-    tyre_RR = ACTyreWidget(3, panel_car, True)
+    tyre_FL = ACTyreWidget(0, panel_tyres, True)
+    tyre_FR = ACTyreWidget(1, panel_tyres, True)
+    tyre_RL = ACTyreWidget(2, panel_tyres)
+    tyre_RR = ACTyreWidget(3, panel_tyres)
 
-    car_grid.addWidget(tyre_FL, 0, 0, 2, 2)
-    car_grid.addWidget(tyre_FR, 0, 3, 2, 2)
-    car_grid.addWidget(tyre_RL, 3, 0, 2, 2)
-    car_grid.addWidget(tyre_RR, 3, 3, 2, 2)
+    tyre_grid.addWidget(tyre_FL, 0, 0, 2, 2)
+    tyre_grid.addWidget(tyre_FR, 3, 0, 2, 2)
+    tyre_grid.addWidget(tyre_RL, 0, 3, 2, 2)
+    tyre_grid.addWidget(tyre_RR, 3, 3, 2, 2)
 
-    # tyre_FL.init()
-    # tyre_FR.init()
-    # tyre_RL.init()
-    # tyre_RR.init()
+    tyre_FL.init()
+    tyre_FR.init()
+    tyre_RL.init()
+    tyre_RR.init()
+
+
+def guiDamage():
+    global damage_grid, panel_damage
+    global damage_widget
+
+    damage_grid = ACGrid(panel_damage, 1, 1)
+    damage_widget = ACCarModelWidget(panel_damage)
+
+    damage_grid.addWidget(damage_widget, 0, 0)
 
 
 def guiPlayer():
@@ -243,6 +262,11 @@ def guiPlayer():
     session_info = ACLabel("", panel_player)
     session_time = ACLabel("", panel_player)
     track_info = ACLabel("", panel_player)
+
+    player_name.font_size = 12
+    session_info.font_size = 14
+    session_time.font_size = 14
+    track_info.font_size = 12
 
     player_grid.addWidget(player_name, 0, 0, 4, 1)
     player_grid.addWidget(session_info, 0, 1, 2, 1)
@@ -290,23 +314,12 @@ def updateTimes(delta=0):
     delta_label.text = ACLAP.getLapDelta()
     delta_label.text_color = delta_widget.delta_color
 
-    split = ACLAP.getSplit()
-    if current_sector_value != split and split != '':
-        CONSOLE("change " + str(split))
-        current_sector_value = split
-        current_sector_text += current_sector_value + " | "
-        current_sector_num += 1
-
-        if current_sector_num == ACLAP.getSectors() + 1:
-            CONSOLE("reset " + str(split))
-            current_sector_num = 0
-            current_sector_text = ""
-        current_sector.text = current_sector_text
+    # current splits
 
     current.text = "CUR:" + ACLAP.getCurrentLap()
     if ACLAP.getLapDeltaTime() < 0:
         current.text_color = GOOD
-    if ACLAP.getLapDeltaTime() > 0:
+    elif ACLAP.getLapDeltaTime() > 0:
         current.text_color = BAD
     else:
         current.text_color = WHITE
@@ -330,10 +343,24 @@ def updateTimes(delta=0):
         best.text_color = WHITE
 
 
-def updateCar(delta=0):
-    global car_grid
+def updateTyres(delta=0):
+    global tyre_grid
+    global tyre_FL, tyre_FR, tyre_RL, tyre_RR
 
-    car_grid.update()
+    tyre_grid.update()
+
+    tyre_FL.update()
+    tyre_FR.update()
+    tyre_RL.update()
+    tyre_RR.update()
+
+
+def updateDamage(delta=0):
+    global damage_grid
+    global damage_widget
+
+    damage_grid.update()
+    damage_widget.update()
 
 
 def updatePlayer(delta=0):
@@ -346,7 +373,8 @@ def updatePlayer(delta=0):
 
     session_info.text = ACSESSION.getSessionTypeName() + " (" + ACSESSION.getSessionStatusName() + ")"
     session_time.text = ACSESSION.getRaceTimeLeftFormated()
-    track_info.text = str(ACSESSION.getTrackName()) + "[" + str(ACSESSION.getTrackConfiguration()) + "] " + str(ACSESSION.getTrackLengthFormated())
+    track_info.text = str(ACSESSION.getTrackName()) + "[" + str(ACSESSION.getTrackConfiguration()) + "] " + str(
+        ACSESSION.getTrackLengthFormated())
 
 
 '''
@@ -377,12 +405,28 @@ def renderTime(delta=0):
     delta_widget.render()
 
 
-def renderCar(delta=0):
-    global panel_car
-    global car_grid
+def renderTyres(delta=0):
+    global panel_tyres
+    global tyre_grid
+    global tyre_FL, tyre_FR, tyre_RL, tyre_RR
 
-    panel_car.render()
-    car_grid.render()
+    panel_tyres.render()
+    tyre_grid.render()
+
+    tyre_FL.render()
+    tyre_FR.render()
+    tyre_RL.render()
+    tyre_RR.render()
+
+
+def renderDamage(delta=0):
+    global panel_damage
+    global damage_widget
+    global damage_grid
+
+    panel_damage.render()
+    damage_grid.render()
+    damage_widget.render()
 
 
 def renderPlayer(delta=0):

@@ -497,7 +497,7 @@ class ACLAP:
 
     @staticmethod
     def getLapDelta(car=0):
-        time = ac.getCarState(car, acsys.CS.PerformanceMeter) * 1000
+        time = ACLAP.getLapDeltaTime() * 1000
         if time != 0:
             if time < 0:
                 return "-" + formatTime(abs(time))
@@ -724,6 +724,7 @@ class ACCAR:
 
     @staticmethod
     def getTyreWearValue(tyre=0):
+        # 0: FL, 1: FR, 2: RL, 3: RR
         return info.physics.tyreWear[tyre]
 
     @staticmethod

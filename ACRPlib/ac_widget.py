@@ -91,86 +91,134 @@ class ACRPMWidget(ACWidget):
                 GL.rect(self.pos[0], pos, self.size[1], bar_w, self.color, True)
 
 
-AC_TYRE_STATUS = {
-    "tyre_wear": [100, 80, 60, 40, 20],
-    "tyre_wear_colors": [GREEN, LIME, YELLOW, ORANGE, RED],
-    "tyre_temp": [100, 80, 60, 40, 20],
-    "tyre_temp_colors": [GREEN, LIME, YELLOW, ORANGE, RED],
-    "tyre_dirt": [100, 80, 60, 40, 20],
-    "tyre_dirt_colors": [GREEN, LIME, YELLOW, ORANGE, RED],
-    "tyre_pressure": [100, 80, 60, 40, 20],
-    "tyre_pressure_colors": [GREEN, LIME, YELLOW, ORANGE, RED]
-}
-
-
 class ACTyreWidget(ACGrid):
-    def __init__(self, tyre, app, mirrored=False, parent=None):
-        super().__init__(parent, 3, 4)
+    def __init__(self, tyre, app, front=False, parent=None):
+        super().__init__(parent, 3, 5)
 
         self.tyre = tyre
         self.app = app
-        self.mirrored = mirrored
+        self.front = front
 
-    #     self.t_o = None
-    #     self.t_m = None
-    #     self.t_c = None
-    #     self.t_i = None
-    #     self.t = None
-    #     self.w = None
-    #     self.p = None
-    #
-    # def init(self):
+        self.tyre_temps = [ACLabel("", self.app)] * 4
+        for i in range(0, len(self.tyre_temps)):
+            self.tyre_temps[i] = ACLabel("", self.app)
+            self.tyre_temps[i].background = True
 
-        self.t_o = ACLabel("", self.app)
-        self.t_m = ACLabel("", self.app)
-        self.t_c = ACLabel("", self.app)
-        self.t_i = ACLabel("", self.app)
+        self.t = None
+        self.p = None
+        self.w = None
+        self.w_state = None
+
+        self.tyre_temp_values = [145, 135, 125, 105, 75, 65, 55]
+        self.tyre_temp_colors = [RED, ORANGE, YELLOW, LIME, GREEN, CYAN, BLUE]
+
+        self.tyre_wear_values = [90, 80, 60, 40, 20]
+        self.tyre_wear_colors = [GREEN, LIME, YELLOW, ORANGE, RED]
+
+        self.tyre_pressure_values = [35, 32, 29, 26, 23, 20, 17]
+        self.tyre_pressure_colors = [RED, ORANGE, YELLOW, LIME, GREEN, CYAN, BLUE]
+
+    def init(self):
+        self.updateSize()
+
         self.t = ACLabel("", self.app)
-        self.w = ACLabel("", self.app)
         self.p = ACLabel("", self.app)
+        self.w = ACLabel("", self.app)
+        self.w_state = ACProgressBar(self.app)
 
-        CONSOLE(str(self.p.size[0]) + " " + str(self.size[1]))
+        self.t.font_size = 12
+        self.t.font_bold = 1
+        self.t.text_h_alignment = "left"
+        self.p.font_size = 12
+        self.p.font_bold = 1
+        self.p.text_h_alignment = "right"
+        self.w.font_size = 12
+        self.w.font_bold = 1
 
-        self.t_o.background_color = GREEN
-        self.t_m.background_color = GREEN
-        self.t_c.background_color = GREEN
-        self.t_i.background_color = GREEN
+        self.w_state.border = 1
 
-        if not self.mirrored:
-            self.addWidget(self.t_o, 0, 0, 1, 3)
+        self.addWidget(self.tyre_temps[0], 0, 0, 1, 3)
+
+        if self.front:
+            self.addWidget(self.tyre_temps[1], 1, 0)
+            self.addWidget(self.tyre_temps[3], 1, 1, 1, 2)
         else:
-            self.addWidget(self.t_o, 2, 0, 1, 3)
+            self.addWidget(self.tyre_temps[1], 1, 2)
+            self.addWidget(self.tyre_temps[3], 1, 0, 1, 2)
 
-        self.addWidget(self.t_m, 1, 0)
-        self.addWidget(self.t_c, 1, 1)
-
-        if not self.mirrored:
-            self.addWidget(self.t_i, 2, 0, 1, 3)
-        else:
-            self.addWidget(self.t_i, 0, 0, 1, 3)
+        self.addWidget(self.tyre_temps[2], 2, 0, 1, 3)
 
         self.addWidget(self.t, 0, 3)
-        self.addWidget(self.w, 1, 3)
         self.addWidget(self.p, 2, 3)
+        self.addWidget(self.w_state, 0, 4, 2, 1)
+        self.addWidget(self.w, 2, 4, 1, 1)
 
     def update(self):
-        super().update()
-
-        self.t.text = ACCAR.getTyreTempFormated(self.tyre)
+        self.t.text = "{:3.0f}°".format(ACCAR.getTyreTemp(self.tyre))
+        self.p.text = "{:2.0f}psi".format(ACCAR.getTyrePressure(self.tyre))
         self.w.text = ACCAR.getTyreWearFormated(self.tyre)
-        self.p.text = ACCAR.getTyrePressureFormated(self.tyre)
+
+        temps = ACCAR.getTyreTemp(self.tyre, "all")
+
+        for i in range(0, len(temps)):
+            for j in range(0, len(self.tyre_temp_values)):
+                if temps[i] > self.tyre_temp_values[j]:
+                    self.t.text_color = self.tyre_temp_colors[j]
+                    self.tyre_temps[i].background_color = self.tyre_temp_colors[j]
+                    break
+
+        wear = ACCAR.getTyreWear(self.tyre)
+        self.w_state.value = wear
+
+        for i in range(0, len(self.tyre_wear_values)):
+            if wear > self.tyre_wear_values[i]:
+                self.w.text_color = self.tyre_wear_colors[i]
+                break
+
+        pressure = ACCAR.getTyrePressure(self.tyre)
+
+        for i in range(0, len(self.tyre_pressure_values)):
+            if pressure > self.tyre_pressure_values[i]:
+                self.p.text_color = self.tyre_pressure_colors[i]
+                break
 
         dirt = ACCAR.getTyreDirtyLevel(self.tyre)
 
         if dirt > 0:
-            self._border = True
-            self._border_color = Color(0.7, 0.3, 0.1, 1)
-            self._background = True
-            self._background_color = Color(0.7, 0.3, 0.1, dirt * 0.1)
+            for i in range(0, len(temps)):
+                self.tyre_temps[i].background_color = Color(0.7, 0.3, 0.1, max(0.2, 1 - dirt * 0.2))
 
-        else:
-            self._border = False
-            self._background = False
+        super().update()
 
     def render(self):
         super().render()
+
+        self.w_state.render()
+
+
+class ACCarModelWidget(ACGrid):
+    def __init__(self, app, parent=None):
+        super().__init__(parent, 7, 7)
+
+        self.app = app
+
+        self.car_damage = [] * 4
+        self.car_damage_values = [80, 60, 40, 20, 0]
+        self.car_damage_colors = [RED, ORANGE, YELLOW, LIME, GREEN]
+
+    def init(self):
+        for i in range(0, len(self.car_damage)):
+            self.car_damage[i] = ACLabel("", self.app)
+
+        self.addWidget(self.car_damage[0], 1, 1, 5, 1)
+        self.addWidget(self.car_damage[1], 6, 1, 5, 1)
+        self.addWidget(self.car_damage[2], 1, 2, 1, 3)
+        self.addWidget(self.car_damage[3], 6, 2, 1, 3)
+
+    def update(self):
+        for i in range(0, len(self.car_damage)):
+            damage = ACCAR.getCarDamage(i)
+            for j in range(0, len(self.car_damage_values)):
+                if damage[i] > self.car_damage_values[j]:
+                    self.car_damage[i].background_color = self.car_damage_colors[j]
+                    break
