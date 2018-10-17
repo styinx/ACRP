@@ -17,6 +17,10 @@ PURPLE = Color(0.3, 0, 0.7, 1)
 GOOD = Color(0, 0.8, 0, 1)
 BAD = Color(0.9, 0, 0, 1)
 
+COLORS = {
+    "TRANSPARENT": TRANSPARENT
+}
+
 
 class ACGUI:
     text_h_alignment = "center"
@@ -455,23 +459,18 @@ class ACGrid(ACLayout):
         self._cell_width = int(self.size[0] / self._cols + 0.5)
         self._cell_height = int(self.size[1] / self._rows + 0.5)
 
+        if isinstance(parent, ACApp):
+            self.pos = (0, 0)
+
     def addWidget(self, widget, x, y, w=1, h=1):
         self._children[y][x] = widget
 
-        if not isinstance(widget, ACApp):
-            widget.pos = (int(self.pos[0] + x * self._cell_width + 0.5), int(self.pos[1] + y * self._cell_height + 0.5))
-        else:
-            widget.pos = (int(x * self._cell_width + 0.5), int(y * self._cell_height + 0.5))
+        widget.pos = (int(self.pos[0] + x * self._cell_width + 0.5), int(self.pos[1] + y * self._cell_height + 0.5))
         widget.size = (int(w * self._cell_width + 0.5), int(h * self._cell_height + 0.5))
 
     def updateSize(self):
         self._cell_width = int(self.size[0] / self._cols + 0.5)
         self._cell_height = int(self.size[1] / self._rows + 0.5)
-
-        # for y, row in enumerate(self._children):
-        #     for x, cell in enumerate(row):
-        #         self._children[y][x].pos = (int(x * self._cell_width), int(y * self._cell_height))
-        #         self._children[y][x].size = (int(w * self._cell_width), int(h * self._cell_height))
 
     def update(self):
         for row in self._children:
@@ -626,11 +625,12 @@ class ACLabel(ACTextWidget):
         ACTextWidget.initOBJ(self)
 
 
-class ACProgressBar(ACWidget):
-    def __init__(self, orientation=0, value=0, min_val=0, max_val=100, parent=None):
-        super().__init__(parent)
+class ACProgressBar(ACLabel):
+    def __init__(self, app, orientation=0, value=0, min_val=0, max_val=100, parent=None):
+        super().__init__("", app, parent)
 
         self.orientation = orientation
+        self.color = self.background_color
         self.margin = 0.2
         self.value = value
         self.min_val = min_val
@@ -640,14 +640,15 @@ class ACProgressBar(ACWidget):
         if self.orientation == 0:
             ratio = self.size[0] * (self.value / self.max_val)
             margin = self.size[1] * self.margin
-            GL.rect(self.pos[0], self.pos[1] + margin, ratio, self.size[1] - 2 * margin, self.background_color)
+            GL.rect(self.pos[0], self.pos[1] + margin, ratio, self.size[1] - 2 * margin, self.color)
 
             if self._border:
-                GL.rect(self.pos[0], self.pos[1] + margin, ratio, self.size[1] - 2 * margin, self.border_color, False)
+                GL.rect(self.pos[0], self.pos[1] + margin, self.size[0], self.size[1] - 2 * margin, self.border_color, False)
         else:
             ratio = self.size[1] * (self.value / self.max_val)
             margin = self.size[0] * self.margin
-            GL.rect(self.pos[0] + margin, self.size[1] - ratio, self.size[0] - 2 * margin, ratio, self.background_color)
+            GL.rect(self.pos[0] + margin, self.size[1] - ratio, self.size[0] - 2 * margin, ratio, self.color)
 
             if self._border:
-                GL.rect(self.pos[0] + margin, self.size[1] - ratio, self.size[0] - 2 * margin, ratio, self.border_color, False)
+                GL.rect(self.pos[0] + margin, self.pos[1], self.size[0] - 2 * margin, self.size[1], self.border_color,
+                        False)

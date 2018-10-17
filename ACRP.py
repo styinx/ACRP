@@ -5,6 +5,7 @@ APP_X = 0
 APP_Y = 0
 APP_W = 0
 APP_H = 0
+first_update = 0
 
 GLOBAL = {
     "CARS": [{"Lap_Invalid", "current_sectors", "Lap"}],
@@ -34,7 +35,7 @@ def rectIntersect(pos1, size1, pos2, size2):
 
 
 def acMain(ac_version):
-    global panel_main, panel_standing, panel_time, panel_tyres, panel_damage, panel_player, main_widget
+    global panel_main, panel_standing, panel_time, panel_tyres, panel_car, panel_session, main_widget
     global APP, APP_X, APP_Y
 
     init()
@@ -42,9 +43,9 @@ def acMain(ac_version):
     panel_main = ACApp("ACRP", 0, 0, 300, 100).hideDecoration()
     panel_standing = ACApp("ACRP Standings", 0, 0, 300, 100).hideDecoration()
     panel_time = ACApp("ACRP Times", 0, 0, 300, 200).hideDecoration()
-    panel_tyres = ACApp("ACRP Tyres", 0, 0, 200, 300).hideDecoration()
-    panel_damage = ACApp("ACRP Damage", 0, 0, 100, 200).hideDecoration()
-    panel_player = ACApp("ACRP Player", 0, 0, 300, 100).hideDecoration()
+    panel_tyres = ACApp("ACRP Tyres", 0, 0, 210, 250).hideDecoration()
+    panel_car = ACApp("ACRP Car", 0, 0, 120, 200).hideDecoration()
+    panel_session = ACApp("ACRP Session", 0, 0, 300, 100).hideDecoration()
     main_widget = ACMainWidget(panel_main)
 
     panel_main.background_color = BLACK
@@ -55,37 +56,43 @@ def acMain(ac_version):
     panel_time.background_opacity = 1
     panel_tyres.background_color = BLACK
     panel_tyres.background_opacity = 1
-    panel_damage.background_color = BLACK
-    panel_damage.background_opacity = 1
-    panel_player.background_color = BLACK
-    panel_player.background_opacity = 1
+    panel_car.background_color = BLACK
+    panel_car.background_opacity = 1
+    panel_session.background_color = BLACK
+    panel_session.background_opacity = 1
 
     guiMain()
     guiStanding()
     guiTimes()
     guiTyres()
-    guiDamage()
-    guiPlayer()
+    guiCar()
+    guiSession()
 
     panel_main.render_callback = renderMain
     panel_standing.render_callback = renderStanding
     panel_time.render_callback = renderTime
     panel_tyres.render_callback = renderTyres
-    panel_damage.render_callback = renderDamage
-    panel_player.render_callback = renderPlayer
+    panel_car.render_callback = renderCar
+    panel_session.render_callback = renderSession
 
     return "ACRP"
 
 
 def acUpdate(delta):
-    global panel_main, panel_standing, panel_time, panel_tyres, panel_damage, panel_player, main_widget
+    global first_update, c_lap_fuel, c_dist_fuel
+    global panel_main, panel_standing, panel_time, panel_tyres, panel_car, panel_session, main_widget
+
+    if first_update == 0:
+        c_lap_fuel = ACCAR.getFuel()
+        c_dist_fuel = c_lap_fuel
+        first_update += 1
 
     panel_main.update()
     panel_standing.update()
     panel_time.update()
     panel_tyres.update()
-    panel_damage.update()
-    panel_player.update()
+    panel_car.update()
+    panel_session.update()
 
     if panel_standing.position_changed:
         main_widget.dettach(panel_standing)
@@ -98,26 +105,26 @@ def acUpdate(delta):
     updateStanding()
     updateTimes()
     updateTyres()
-    updateDamage()
-    updatePlayer()
+    updateCar()
+    updateSession()
 
 
 def acRender(delta):
-    global panel_main, panel_standing, panel_time, panel_tyres, panel_damage, panel_player
+    global panel_main, panel_standing, panel_time, panel_tyres, panel_car, panel_session
 
     panel_main.render()
     panel_standing.render()
     panel_time.render()
     panel_tyres.render()
-    panel_damage.render()
-    panel_player.render()
+    panel_car.render()
+    panel_session.render()
 
     renderMain()
     renderStanding()
     renderTime()
     renderTyres()
-    renderDamage()
-    renderPlayer()
+    renderCar()
+    renderSession()
 
 
 '''
@@ -134,6 +141,8 @@ def guiMain():
     speed = ACLabel("", panel_main)
     rpm = ACLabel("", panel_main)
     rpm_widget = ACRPMWidget()
+
+    main_grid.background = 1
 
     gear.font_bold = 1
     gear.font_size = 60
@@ -185,7 +194,7 @@ def guiStanding():
 
 def guiTimes():
     global panel_time
-    global time_grid, delta_widget, delta_label, current_sectors, current, last_sectors, last, best
+    global time_grid, delta_widget, delta_label, current_sectors, current, last_sectors, last, best, valid
     global current_sector_num, current_sector_value, current_sector_text, current_sector
 
     time_grid = ACGrid(panel_time, 6, 8)
@@ -200,6 +209,7 @@ def guiTimes():
     current_sector_num = -1
     current_sector_value = 0
     current_sector_text = ""
+    valid = True
 
     delta_label.font_bold = 1
     delta_label.font_size = 16
@@ -222,20 +232,20 @@ def guiTimes():
 
 
 def guiTyres():
-    global tyre_grid, panel_tyres
-    global tyre_FL, tyre_FR, tyre_RL, tyre_RR
+    global panel_tyres
+    global tyre_grid, tyre_FL, tyre_FR, tyre_RL, tyre_RR
 
-    tyre_grid = ACGrid(panel_tyres, 5, 5)
+    tyre_grid = ACGrid(panel_tyres, 7, 7)
 
     tyre_FL = ACTyreWidget(0, panel_tyres, True)
     tyre_FR = ACTyreWidget(1, panel_tyres, True)
     tyre_RL = ACTyreWidget(2, panel_tyres)
     tyre_RR = ACTyreWidget(3, panel_tyres)
 
-    tyre_grid.addWidget(tyre_FL, 0, 0, 2, 2)
-    tyre_grid.addWidget(tyre_FR, 3, 0, 2, 2)
-    tyre_grid.addWidget(tyre_RL, 0, 3, 2, 2)
-    tyre_grid.addWidget(tyre_RR, 3, 3, 2, 2)
+    tyre_grid.addWidget(tyre_FL, 0, 0, 3, 3)
+    tyre_grid.addWidget(tyre_FR, 4, 0, 3, 3)
+    tyre_grid.addWidget(tyre_RL, 0, 4, 3, 3)
+    tyre_grid.addWidget(tyre_RR, 4, 4, 3, 3)
 
     tyre_FL.init()
     tyre_FR.init()
@@ -243,35 +253,62 @@ def guiTyres():
     tyre_RR.init()
 
 
-def guiDamage():
-    global damage_grid, panel_damage
-    global damage_widget
+def guiCar():
+    global car_grid, panel_car
+    global car_widget, fuel, fuel_rate_p_l, fuel_rate_p_km, c_lap, c_lap_fuel, c_dist, c_dist_fuel, fuel_bar
 
-    damage_grid = ACGrid(panel_damage, 1, 1)
-    damage_widget = ACCarModelWidget(panel_damage)
+    car_grid = ACGrid(panel_car, 3, 7)
+    car_widget = ACCarModelWidget(panel_car)
+    fuel = ACLabel("", panel_car)
+    fuel_bar = ACProgressBar(panel_car, 1)
+    fuel_rate_p_l = ACLabel("", panel_car)
+    fuel_rate_p_km = ACLabel("", panel_car)
 
-    damage_grid.addWidget(damage_widget, 0, 0)
+    fuel.font_size = 12
+    fuel.font_bold = 12
+    fuel.text_h_alignment = "left"
+    fuel_rate_p_l.font_size = 12
+    fuel_rate_p_l.text = "0.0 l / lap"
+    fuel_rate_p_l.text_h_alignment = "left"
+    fuel_rate_p_km.font_size = 12
+    fuel_rate_p_km.text = "0.0 l / km"
+    fuel_rate_p_km.text_h_alignment = "left"
+
+    c_lap = 0
+    c_lap_fuel = ACCAR.getFuel()
+    c_dist = 0
+    c_dist_fuel = c_lap_fuel
+
+    car_grid.addWidget(car_widget, 0, 0, 3, 4)
+    car_grid.addWidget(fuel, 0, 4, 2, 1)
+    car_grid.addWidget(fuel_rate_p_l, 0, 5, 2, 1)
+    car_grid.addWidget(fuel_rate_p_km, 2, 6, 2, 1)
+    car_grid.addWidget(fuel_bar, 0, 4, 1, 3)
+
+    car_widget.init()
 
 
-def guiPlayer():
-    global panel_player
-    global player_grid, player_name, session_info, session_time, track_info
+def guiSession():
+    global panel_session
+    global session_grid, session_state, session_time, track_info, lap_progress
 
-    player_grid = ACGrid(panel_player, 4, 3)
-    player_name = ACLabel("", panel_player)
-    session_info = ACLabel("", panel_player)
-    session_time = ACLabel("", panel_player)
-    track_info = ACLabel("", panel_player)
+    session_grid = ACGrid(panel_session, 4, 4)
+    session_state = ACLabel("", panel_session)
+    session_time = ACLabel("", panel_session)
+    track_info = ACLabel("", panel_session)
+    lap_progress = ACProgressBar(panel_session)
 
-    player_name.font_size = 12
-    session_info.font_size = 14
+    session_state.font_size = 14
     session_time.font_size = 14
-    track_info.font_size = 12
+    session_time.text_h_alignment = "left"
+    track_info.font_size = 14
+    track_info.text_h_alignment = "left"
+    lap_progress.color = CYAN
 
-    player_grid.addWidget(player_name, 0, 0, 4, 1)
-    player_grid.addWidget(session_info, 0, 1, 2, 1)
-    player_grid.addWidget(session_time, 2, 1, 2, 1)
-    player_grid.addWidget(track_info, 0, 2, 2, 1)
+    session_grid.addWidget(session_state, 0, 0, 4, 1)
+    session_grid.addWidget(session_time, 0, 1, 4, 1)
+    session_grid.addWidget(track_info, 0, 2, 4, 1)
+    session_grid.addWidget(lap_progress, 0, 3, 4, 1)
 
 
 '''
@@ -288,27 +325,30 @@ def updateMain(delta=0):
     rpm.text = "{:5.0f} rpm".format(ACCAR.getRPM())
     rpm_widget.update()
 
-    if rpm_widget.rpm_rel >= 0.96:
-        main_grid.background_color = YELLOW
+    if rpm_widget.rpm_rel >= 0.94:
+        panel_main.background_color = Color(1, 1, 0, 0.5)
     else:
-        main_grid.background_color = TRANSPARENT
+        panel_main.background_color = BLACK
 
     main_grid.update()
 
 
 def updateStanding(delta=0):
-    global lap, position, next_car, prev_car
+    global standing_grid, lap, position, next_car, prev_car
 
     lap.text = "Lap: " + str(ACLAP.getLap()) + "/" + str(ACLAP.getLaps())
     position.text = "Pos: " + str(ACCAR.getPosition()) + "/" + str(ACSESSION.getCarsCount())
     next_car.text = "Next: " + ACCAR.getNextCarDiff()
     prev_car.text = "Prev: " + ACCAR.getPrevCarDiff()
 
+    standing_grid.update()
+
 
 def updateTimes(delta=0):
-    global time_grid, delta_widget, delta_label, current_sectors, current, last_sectors, last, best
+    global time_grid, delta_widget, delta_label, current_sectors, current, last_sectors, last, best, valid
     global current_sector_num, current_sector_value, current_sector_text, current_sector
 
+    time_grid.update()
     delta_widget.update()
 
     delta_label.text = ACLAP.getLapDelta()
@@ -316,7 +356,13 @@ def updateTimes(delta=0):
 
     # current splits
 
-    current.text = "CUR:" + ACLAP.getCurrentLap()
+    if ACCAR.getTyresOut() == 4:
+        valid = False
+
+    if valid:
+        current.text = "CUR:" + ACLAP.getCurrentLap()
+    else:
+        current.text = "CUR:" + ACLAP.getCurrentLap() + " [INVALID]"
     if ACLAP.getLapDeltaTime() < 0:
         current.text_color = GOOD
     elif ACLAP.getLapDeltaTime() > 0:
@@ -355,26 +401,38 @@ def updateTyres(delta=0):
     tyre_RR.update()
 
 
-def updateDamage(delta=0):
-    global damage_grid
-    global damage_widget
+def updateCar(delta=0):
+    global car_grid
+    global car_widget, fuel, fuel_rate_p_l, fuel_rate_p_km, c_lap, c_lap_fuel, c_dist, c_dist_fuel, fuel_bar
 
-    damage_grid.update()
-    damage_widget.update()
+    fuel_bar.value = ACCAR.getFuel() / ACCAR.getMaxFuel()
+
+    if ACLAP.getLap() > c_lap:
+        fuel_rate_p_l.text = "{:3.1f} l / lap".format(max(0, c_lap_fuel - ACCAR.getFuel()))
+        c_lap_fuel = ACCAR.getFuel()
+        c_lap = ACLAP.getLap()
+    if int(ACCAR.getTraveledDistance() / 1000) > c_dist:
+        fuel_rate_p_km.text = "{:3.1f} l / km".format(max(0, c_dist_fuel - ACCAR.getFuel()))
+        c_dist_fuel = ACCAR.getFuel()
+        c_dist = int(ACCAR.getTraveledDistance() / 1000)
+
+    fuel.text = "{:3.1f} l".format(ACCAR.getFuel())
+    fuel_rate_p_l.text = fuel_rate_p_l.text
+    fuel_rate_p_km.text = fuel_rate_p_km.text
+
+    car_grid.update()
+    car_widget.update()
 
 
-def updatePlayer(delta=0):
-    global player_grid, player_name, session_info, session_time, track_info
+def updateSession(delta=0):
+    global session_grid, session_state, session_time, track_info, lap_progress
 
-    if ACCAR.isAIDriven():
-        player_name.text = ACPLAYER.getPlayerNickname() + " [" + ACSESSION.getCarName() + "] (AI)"
-    else:
-        player_name.text = ACPLAYER.getPlayerNickname() + " [" + ACSESSION.getCarName() + "]"
+    session_grid.update()
 
-    session_info.text = ACSESSION.getSessionTypeName() + " (" + ACSESSION.getSessionStatusName() + ")"
+    session_state.text = ACSESSION.getSessionTypeName() + " (" + ACSESSION.getSessionStatusName() + ")"
     session_time.text = ACSESSION.getRaceTimeLeftFormated()
-    track_info.text = str(ACSESSION.getTrackName()) + "[" + str(ACSESSION.getTrackConfiguration()) + "] " + str(
-        ACSESSION.getTrackLengthFormated())
+    track_info.text = "Track distance: " + str(ACSESSION.getTrackLengthFormated())
+    lap_progress.value = ACCAR.getLocation()
 
 
 '''
@@ -393,15 +451,18 @@ def renderMain(delta=0):
 
 def renderStanding(delta=0):
     global panel_standing
+    global standing_grid
 
+    standing_grid.render()
     panel_standing.render()
 
 
 def renderTime(delta=0):
     global panel_time
-    global delta_widget
+    global time_grid, delta_widget
 
     panel_time.render()
+    time_grid.render()
     delta_widget.render()
 
 
@@ -419,17 +480,19 @@ def renderTyres(delta=0):
     tyre_RR.render()
 
 
-def renderDamage(delta=0):
-    global panel_damage
-    global damage_widget
-    global damage_grid
+def renderCar(delta=0):
+    global panel_car
+    global car_widget
+    global car_grid
 
-    panel_damage.render()
-    damage_grid.render()
-    damage_widget.render()
+    panel_car.render()
+    car_grid.render()
+    car_widget.render()
 
 
-def renderPlayer(delta=0):
-    global panel_player
+def renderSession(delta=0):
+    global panel_session
+    global session_grid
 
-    panel_player.render()
+    panel_session.render()
+    session_grid.render()

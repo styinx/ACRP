@@ -39,12 +39,6 @@ class ACLapDeltaWidget(ACWidget):
         GL.line(x + w2, y, x + w2, y + h, WHITE)
 
 
-AC_RPM_STATUS = {
-    "rpm": [100, 98, 96, 94, 92],
-    "rpm_colors": [RED, ORANGE, YELLOW, LIME, GREEN]
-}
-
-
 class ACRPMWidget(ACWidget):
     def __init__(self, orientation=0, parent=None):
         super().__init__(parent)
@@ -52,6 +46,9 @@ class ACRPMWidget(ACWidget):
         self.rpm_rel = 0
         self.orientation = orientation
         self.color = TRANSPARENT
+
+        self.rpm_values = [0.92, 0.8, 0.6, 0.3, 0]
+        self.rpm_colors = [RED, ORANGE, YELLOW, LIME, GREEN]
 
     def update(self):
         super().update()
@@ -74,16 +71,10 @@ class ACRPMWidget(ACWidget):
             bar_d *= -1
 
         for pos in range(start, stop, bar_d):
-            if pos >= 0.92 * size:
-                self.color = RED
-            elif pos >= 0.8 * size:
-                self.color = ORANGE
-            elif pos >= 0.6 * size:
-                self.color = YELLOW
-            elif pos >= 0.3 * size:
-                self.color = LIME
-            else:
-                self.color = GREEN
+            for i in range(0, len(self.rpm_values)):
+                if pos >= self.rpm_values[i] * size:
+                    self.color = self.rpm_colors[i]
+                    break
 
             if self.orientation == 0:
                 GL.rect(pos, int(self.pos[1] + (self.size[1] * offset)), bar_w, int(self.size[1] * (1 - offset * 2)), self.color, True)
@@ -112,7 +103,7 @@ class ACTyreWidget(ACGrid):
         self.tyre_temp_values = [145, 135, 125, 105, 75, 65, 55]
         self.tyre_temp_colors = [RED, ORANGE, YELLOW, LIME, GREEN, CYAN, BLUE]
 
-        self.tyre_wear_values = [90, 80, 60, 40, 20]
+        self.tyre_wear_values = [90, 70, 50, 30, 0]
         self.tyre_wear_colors = [GREEN, LIME, YELLOW, ORANGE, RED]
 
         self.tyre_pressure_values = [35, 32, 29, 26, 23, 20, 17]
@@ -156,7 +147,7 @@ class ACTyreWidget(ACGrid):
     def update(self):
         self.t.text = "{:3.0f}°".format(ACCAR.getTyreTemp(self.tyre))
         self.p.text = "{:2.0f}psi".format(ACCAR.getTyrePressure(self.tyre))
-        self.w.text = ACCAR.getTyreWearFormated(self.tyre)
+        self.w.text = "{:2.0f}%".format(ACCAR.getTyreWear(self.tyre))
 
         temps = ACCAR.getTyreTemp(self.tyre, "all")
 
@@ -172,6 +163,7 @@ class ACTyreWidget(ACGrid):
 
         for i in range(0, len(self.tyre_wear_values)):
             if wear > self.tyre_wear_values[i]:
+                self.w_state.color = self.tyre_wear_colors[i]
                 self.w.text_color = self.tyre_wear_colors[i]
                 break
 
@@ -198,27 +190,33 @@ class ACTyreWidget(ACGrid):
 
 class ACCarModelWidget(ACGrid):
     def __init__(self, app, parent=None):
-        super().__init__(parent, 7, 7)
+        super().__init__(parent, 7, 11)
 
         self.app = app
 
-        self.car_damage = [] * 4
-        self.car_damage_values = [80, 60, 40, 20, 0]
-        self.car_damage_colors = [RED, ORANGE, YELLOW, LIME, GREEN]
+        self.car_damage = [ACLabel("", self.app)] * 4
+        self.car_damage_values = [90, 60, 30, 0]
+        self.car_damage_colors = [RED, ORANGE, YELLOW, LIME]
 
     def init(self):
+        self.updateSize()
+
         for i in range(0, len(self.car_damage)):
             self.car_damage[i] = ACLabel("", self.app)
+            self.car_damage[i].background_color = GREEN
 
-        self.addWidget(self.car_damage[0], 1, 1, 5, 1)
-        self.addWidget(self.car_damage[1], 6, 1, 5, 1)
-        self.addWidget(self.car_damage[2], 1, 2, 1, 3)
-        self.addWidget(self.car_damage[3], 6, 2, 1, 3)
+        self.addWidget(self.car_damage[0], 2, 1, 3, 1)
+        self.addWidget(self.car_damage[1], 2, 9, 3, 1)
+        self.addWidget(self.car_damage[2], 1, 3, 1, 5)
+        self.addWidget(self.car_damage[3], 5, 3, 1, 5)
 
     def update(self):
         for i in range(0, len(self.car_damage)):
             damage = ACCAR.getCarDamage(i)
             for j in range(0, len(self.car_damage_values)):
-                if damage[i] > self.car_damage_values[j]:
+                if damage > self.car_damage_values[j]:
                     self.car_damage[i].background_color = self.car_damage_colors[j]
                     break
+
+    def render(self):
+        super().render()
