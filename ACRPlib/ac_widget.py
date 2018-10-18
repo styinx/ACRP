@@ -162,7 +162,7 @@ class ACTyreWidget(ACGrid):
         self.w_state.value = wear
 
         for i in range(0, len(self.tyre_wear_values)):
-            if wear > self.tyre_wear_values[i]:
+            if wear >= self.tyre_wear_values[i]:
                 self.w_state.color = self.tyre_wear_colors[i]
                 self.w.text_color = self.tyre_wear_colors[i]
                 break
@@ -214,7 +214,7 @@ class ACCarModelWidget(ACGrid):
         for i in range(0, len(self.car_damage)):
             damage = ACCAR.getCarDamage(i)
             for j in range(0, len(self.car_damage_values)):
-                if damage > self.car_damage_values[j]:
+                if damage >= self.car_damage_values[j]:
                     self.car_damage[i].background_color = self.car_damage_colors[j]
                     break
 

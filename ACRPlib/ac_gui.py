@@ -630,6 +630,7 @@ class ACProgressBar(ACLabel):
         super().__init__("", app, parent)
 
         self.orientation = orientation
+        self.border = True
         self.color = self.background_color
         self.margin = 0.2
         self.value = value
@@ -640,15 +641,15 @@ class ACProgressBar(ACLabel):
         if self.orientation == 0:
             ratio = self.size[0] * (self.value / self.max_val)
             margin = self.size[1] * self.margin
-            GL.rect(self.pos[0], self.pos[1] + margin, ratio, self.size[1] - 2 * margin, self.color)
+            GL.rect(self.pos[0] + margin, self.pos[1] + margin, ratio - 2 * margin, self.size[1] - 2 * margin, self.color)
 
             if self._border:
-                GL.rect(self.pos[0], self.pos[1] + margin, self.size[0], self.size[1] - 2 * margin, self.border_color, False)
+                GL.rect(self.pos[0] + margin, self.pos[1] + margin, self.size[0] - 2 * margin, self.size[1] - 2 * margin, self.border_color, False)
         else:
             ratio = self.size[1] * (self.value / self.max_val)
-            margin = self.size[0] * self.margin
-            GL.rect(self.pos[0] + margin, self.size[1] - ratio, self.size[0] - 2 * margin, ratio, self.color)
+            margin = self.size[1] * self.margin
+            GL.rect(self.pos[0] + margin, self.size[1] - ratio + margin, self.size[0] - 2 * margin, ratio - 2 * margin, self.color)
 
             if self._border:
-                GL.rect(self.pos[0] + margin, self.pos[1], self.size[0] - 2 * margin, self.size[1], self.border_color,
+                GL.rect(self.pos[0] + margin, self.pos[1] + margin, self.size[0] - 2 * margin, self.size[1] - 2 * margin, self.border_color,
                         False)

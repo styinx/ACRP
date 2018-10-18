@@ -1,4 +1,5 @@
 from ACRPlib.ac_widget import *
+from time import localtime, strftime
 
 APP = None
 APP_X = 0
@@ -43,7 +44,7 @@ def acMain(ac_version):
     panel_main = ACApp("ACRP", 0, 0, 300, 100).hideDecoration()
     panel_standing = ACApp("ACRP Standings", 0, 0, 300, 100).hideDecoration()
     panel_time = ACApp("ACRP Times", 0, 0, 300, 200).hideDecoration()
-    panel_tyres = ACApp("ACRP Tyres", 0, 0, 210, 250).hideDecoration()
+    panel_tyres = ACApp("ACRP Tyres", 0, 0, 210, 270).hideDecoration()
     panel_car = ACApp("ACRP Car", 0, 0, 120, 200).hideDecoration()
     panel_session = ACApp("ACRP Session", 0, 0, 300, 100).hideDecoration()
     main_widget = ACMainWidget(panel_main)
@@ -233,7 +234,7 @@ def guiTimes():
 
 def guiTyres():
     global panel_tyres
-    global tyre_grid, tyre_FL, tyre_FR, tyre_RL, tyre_RR
+    global tyre_grid, tyre_FL, tyre_FR, tyre_RL, tyre_RR, compound
 
     tyre_grid = ACGrid(panel_tyres, 7, 7)
 
@@ -242,8 +243,13 @@ def guiTyres():
     tyre_RL = ACTyreWidget(2, panel_tyres)
     tyre_RR = ACTyreWidget(3, panel_tyres)
 
+    compound = ACLabel("", panel_tyres)
+    compound.font_size = 16
+    compound.font_bold = 1
+
     tyre_grid.addWidget(tyre_FL, 0, 0, 3, 3)
     tyre_grid.addWidget(tyre_FR, 4, 0, 3, 3)
+    tyre_grid.addWidget(compound, 0, 3, 7, 1)
     tyre_grid.addWidget(tyre_RL, 0, 4, 3, 3)
     tyre_grid.addWidget(tyre_RR, 4, 4, 3, 3)
 
@@ -268,10 +274,10 @@ def guiCar():
     fuel.font_bold = 12
     fuel.text_h_alignment = "left"
     fuel_rate_p_l.font_size = 12
-    fuel_rate_p_l.text = "0.0 l / lap"
+    fuel_rate_p_l.text = " 0.0 l/lap"
     fuel_rate_p_l.text_h_alignment = "left"
     fuel_rate_p_km.font_size = 12
-    fuel_rate_p_km.text = "0.0 l / km"
+    fuel_rate_p_km.text = " 0.0 l/km"
     fuel_rate_p_km.text_h_alignment = "left"
 
     c_lap = 0
@@ -282,8 +288,8 @@ def guiCar():
     car_grid.addWidget(car_widget, 0, 0, 3, 4)
     car_grid.addWidget(fuel, 0, 4, 2, 1)
     car_grid.addWidget(fuel_rate_p_l, 0, 5, 2, 1)
-    car_grid.addWidget(fuel_rate_p_km, 2, 6, 2, 1)
-    car_grid.addWidget(fuel_bar, 0, 4, 1, 3)
+    car_grid.addWidget(fuel_rate_p_km, 0, 6, 2, 1)
+    car_grid.addWidget(fuel_bar, 2, 4, 1, 3)
 
     car_widget.init()
 
@@ -292,7 +298,7 @@ def guiSession():
     global panel_session
     global session_grid, session_state, session_time, track_info, lap_progress
 
-    session_grid = ACGrid(panel_session, 4, 4)
+    session_grid = ACGrid(panel_session, 4, 5)
     session_state = ACLabel("", panel_session)
     session_time = ACLabel("", panel_session)
     track_info = ACLabel("", panel_session)
@@ -308,7 +314,7 @@ def guiSession():
     session_grid.addWidget(session_state, 0, 0, 4, 1)
     session_grid.addWidget(session_time, 0, 1, 4, 1)
     session_grid.addWidget(track_info, 0, 2, 4, 1)
-    session_grid.addWidget(lap_progress, 0, 3, 4, 1)
+    session_grid.addWidget(lap_progress, 0, 4, 4, 1)
 
 
 '''
@@ -356,8 +362,7 @@ def updateTimes(delta=0):
 
     # current splits
 
-    if ACCAR.getTyresOut() == 4:
-        valid = False
+    valid = valid and not ACLAP.isLapInvalidated()
 
     if valid:
         current.text = "CUR:" + ACLAP.getCurrentLap()
@@ -391,9 +396,11 @@ def updateTimes(delta=0):
 
 def updateTyres(delta=0):
     global tyre_grid
-    global tyre_FL, tyre_FR, tyre_RL, tyre_RR
+    global tyre_FL, tyre_FR, tyre_RL, tyre_RR, compound
 
     tyre_grid.update()
+
+    compound.text = ACCAR.getTyreCompund()
 
     tyre_FL.update()
     tyre_FR.update()
@@ -403,20 +410,21 @@ def updateTyres(delta=0):
 
 def updateCar(delta=0):
     global car_grid
-    global car_widget, fuel, fuel_rate_p_l, fuel_rate_p_km, c_lap, c_lap_fuel, c_dist, c_dist_fuel, fuel_bar
+    global car_widget, fuel, fuel_rate_p_l, fuel_rate_p_km, c_lap, c_lap_fuel, c_dist, c_dist_fuel, fuel_bar, valid
 
-    fuel_bar.value = ACCAR.getFuel() / ACCAR.getMaxFuel()
+    fuel_bar.value = ACCAR.getFuel() / ACCAR.getMaxFuel() * 100
 
     if ACLAP.getLap() > c_lap:
-        fuel_rate_p_l.text = "{:3.1f} l / lap".format(max(0, c_lap_fuel - ACCAR.getFuel()))
+        valid = True
+        fuel_rate_p_l.text = " {:3.1f} l/lap".format(max(0, c_lap_fuel - ACCAR.getFuel()))
         c_lap_fuel = ACCAR.getFuel()
         c_lap = ACLAP.getLap()
     if int(ACCAR.getTraveledDistance() / 1000) > c_dist:
-        fuel_rate_p_km.text = "{:3.1f} l / km".format(max(0, c_dist_fuel - ACCAR.getFuel()))
+        fuel_rate_p_km.text = " {:3.1f} l/km".format(max(0, c_dist_fuel - ACCAR.getFuel()))
         c_dist_fuel = ACCAR.getFuel()
         c_dist = int(ACCAR.getTraveledDistance() / 1000)
 
-    fuel.text = "{:3.1f} l".format(ACCAR.getFuel())
+    fuel.text = " {:3.1f} l".format(ACCAR.getFuel())
     fuel_rate_p_l.text = fuel_rate_p_l.text
     fuel_rate_p_km.text = fuel_rate_p_km.text
 
@@ -429,10 +437,10 @@ def updateSession(delta=0):
 
     session_grid.update()
 
-    session_state.text = ACSESSION.getSessionTypeName() + " (" + ACSESSION.getSessionStatusName() + ")"
+    session_state.text = ACSESSION.getSessionTypeName() + " (" + ACSESSION.getSessionStatusName() + ")     " + strftime("%H:%M:%S", localtime())
     session_time.text = ACSESSION.getRaceTimeLeftFormated()
     track_info.text = "Track distance: " + str(ACSESSION.getTrackLengthFormated())
-    lap_progress.value = ACCAR.getLocation()
+    lap_progress.value = ACCAR.getLocation() * 100
 
 
 '''
@@ -482,17 +490,19 @@ def renderTyres(delta=0):
 
 def renderCar(delta=0):
     global panel_car
-    global car_widget
     global car_grid
+    global car_widget, fuel_bar
 
     panel_car.render()
     car_grid.render()
     car_widget.render()
+    fuel_bar.render()
 
 
 def renderSession(delta=0):
     global panel_session
-    global session_grid
+    global session_grid, lap_progress
 
     panel_session.render()
     session_grid.render()
+    lap_progress.render()

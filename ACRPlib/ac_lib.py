@@ -719,6 +719,18 @@ class ACCAR:
         return info.static.maxFuel
 
     @staticmethod
+    def getCamberRad(tyre=0):
+        return info.physics.camberRAD[tyre]
+
+    @staticmethod
+    def getMaxSuspensionTravel(tyre=0):
+        return info.static.suspensionMaxTravel[tyre]
+
+    @staticmethod
+    def getSuspensionTravel(tyre=0):
+        return info.physics.suspensionTravel[tyre]
+
+    @staticmethod
     def getTyresOut():
         return info.physics.numberOfTyresOut
 
@@ -742,12 +754,6 @@ class ACCAR:
     @staticmethod
     def getTyreCompund():
         return info.graphics.tyreCompound
-
-    @staticmethod
-    def getTyreCompundSymbol():
-        compund = info.graphics.tyreCompound
-        if compund == "":
-            return ""
 
     @staticmethod
     def getCarModel():
